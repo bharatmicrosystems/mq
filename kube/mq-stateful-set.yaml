@@ -1,0 +1,52 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+        name: mq
+        labels:
+                app: mq
+spec:
+        replicas: 2
+        serviceName: mq-server
+        selector:
+                matchLabels:
+                        app: mq
+                        tier: frontend
+        template:
+                metadata:
+                        labels:
+                                app: mq
+                                tier: frontend
+                spec:
+                        containers:
+                                - name: mq
+                                  image: rmg/mq
+                                  ports:
+                                          - containerPort: 1414
+                                  volumeMounts:
+                                          - mountPath: /var/mqm
+                                            name: mqm-volume
+        volumeClaimTemplates:
+                - metadata:
+                        name: mqm-volume
+                  spec:
+                          accessModes:
+                                  - ReadWriteOnce
+                          resources:
+                                  requests:
+                                          storage: 20Gi
+                          storageClassName: standard
+---
+apiVersion: v1
+kind: Service
+metadata:
+        name: mq-server
+        labels:
+                app: mq
+                tier: frontend
+spec:
+        type: LoadBalancer
+        ports:
+                - port: 1414
+        selector:
+                app: mq
+                tier: frontend
